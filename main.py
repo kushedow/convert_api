@@ -1,3 +1,4 @@
+import img2pdf
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,7 +9,8 @@ from pypdf import PdfWriter
 
 from docx_to_pdf import convert_docx_file_to_pdf
 from file_utils import save_base64_as_file, get_file_content_as_base64
-
+from jpeg_to_pdf import convert_jpeg_file_to_pdf
+from png_to_pdf import convert_png_file_to_pdf
 
 app = FastAPI(
     title="PDF Merger API",
@@ -89,6 +91,19 @@ async def docx_to_pdf(request: FileConversionRequest):
     return {"file_base64": file_base64}
 
 
+@app.post("/png/to/pdf")
+async def png_to_pdf(request: FileConversionRequest):
+    file_base64 = convert_png_file_to_pdf(request.file_base64)
+    return {"file_base64": file_base64}
+
+@app.post("/jpeg/to/pdf")
+async def jpeg_to_pdf(request: FileConversionRequest):
+    file_base64 = convert_jpeg_file_to_pdf(request.file_base64)
+    return {"file_base64": file_base64}
+
+@app.get("/health", summary="Проверка работоспособности сервиса")
+async def health_check():
+    return {"status": "ok", "message": "Service is running"}
 
 
 if __name__ == "__main__":
