@@ -4,6 +4,14 @@ from pydantic import BaseModel
 import base64
 import io
 from pypdf import PdfWriter
+import tempfile
+import os
+from docx2pdf import convert
+import shutil
+
+from docx_to_pdf import convert_docx_file_to_pdf
+from file_utils import save_base64_as_file, get_file_content_as_base64
+
 
 app = FastAPI(
     title="PDF Merger API",
@@ -31,6 +39,14 @@ class PDFMergeRequest(BaseModel):
     files: list[str]
 
 
+class FileConversionRequest(BaseModel):
+    """
+    Represents the request body for a single file conversion.
+    It expects one Base64 encoded file string.
+    """
+    file_base64: str
+
+
 @app.post("/pdf/to/merge", summary="Merge PDF files", response_description="Merged PDF as Base64 string")
 async def merge_pdfs(request: PDFMergeRequest):
 
@@ -45,13 +61,9 @@ async def merge_pdfs(request: PDFMergeRequest):
             merger.append(pdf_file_object)
 
         output_pdf_buffer = io.BytesIO()
-
         merger.write(output_pdf_buffer)
-
         merger.close()
-
         merged_pdf_bytes = output_pdf_buffer.getvalue()
-
         merged_pdf_base64 = base64.b64encode(merged_pdf_bytes).decode('utf-8')
 
         return {"file_base64": merged_pdf_base64}
@@ -64,6 +76,24 @@ async def merge_pdfs(request: PDFMergeRequest):
         raise HTTPException(status_code=400, detail=f"Error merging PDFs: {e}")
 
 
+@app.post("/docx/to/pdf", summary="Convert DOCX to PDF", response_description="Converted PDF as a Base64 string")
+async def docx_to_pdf(request: FileConversionRequest):
+    """
+    Converts a single DOCX file to PDF.
+    - **Prerequisite**: Requires LibreOffice (Linux/macOS) or MS Word (Windows) installed on the server.
+    - **Input**: A JSON object with a 'file_base64' key, containing a Base64-encoded DOCX string.
+    - **Output**: A JSON object with a 'file_base64' key, containing the converted PDF as a Base64 string.
+    """
+
+    file_base64 = request.file_base64
+    file_name: str = save_base64_as_file(file_base64, "docx")
+    convert_docx_file_to_pdf(f"./temp/{file_name}.docx")
+    file_base64 = get_file_content_as_base64(f"./temp/{file_name}.pdf")
+    return {"file_base64": file_base64}
+
+
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=10000)
