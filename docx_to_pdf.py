@@ -1,7 +1,4 @@
-import os
 import subprocess
-import base64
-import uuid
 
 def convert_docx_file_to_pdf(source_path):
 

@@ -4,10 +4,7 @@ from pydantic import BaseModel
 import base64
 import io
 from pypdf import PdfWriter
-import tempfile
-import os
-from docx2pdf import convert
-import shutil
+
 
 from docx_to_pdf import convert_docx_file_to_pdf
 from file_utils import save_base64_as_file, get_file_content_as_base64
