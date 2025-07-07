@@ -1,11 +1,10 @@
-import img2pdf
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import base64
 import io
 from pypdf import PdfWriter
-
+from xhtml2pdf import pisa
 
 from docx_to_pdf import convert_docx_file_to_pdf
 from file_utils import save_base64_as_file, get_file_content_as_base64
@@ -100,6 +99,52 @@ async def png_to_pdf(request: FileConversionRequest):
 async def jpeg_to_pdf(request: FileConversionRequest):
     file_base64 = convert_jpeg_file_to_pdf(request.file_base64)
     return {"file_base64": file_base64}
+
+
+@app.post("/html/to/pdf")
+async def html_to_pdf(request: FileConversionRequest):
+    """
+    Converts HTML content to PDF using xhtml2pdf engine.
+    - **Input**: Base64 encoded HTML string
+    - **Output**: Base64 encoded PDF document
+    """
+    try:
+        # Decode base64 HTML content
+        html_bytes = base64.b64decode(request.file_base64)
+        html_content = html_bytes.decode('utf-8')
+
+        # Create a bytes buffer for PDF output
+        pdf_buffer = io.BytesIO()
+
+        # Convert HTML to PDF
+        pisa_status = pisa.CreatePDF(
+            html_content,
+            dest=pdf_buffer,
+            encoding='utf-8',
+            show_error_as_pdf=True
+        )
+
+        # Check for conversion errors
+        if pisa_status.err:
+            raise HTTPException(
+                status_code=500,
+                detail="HTML to PDF conversion failed"
+            )
+
+        # Get PDF bytes and encode to base64
+        pdf_bytes = pdf_buffer.getvalue()
+        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+
+        return {"file_base64": pdf_base64 }
+
+    except base64.binascii.Error:
+        raise HTTPException(status_code=400, detail="Invalid Base64 format")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Conversion error: {str(e)}"
+        )
+
 
 @app.get("/health", summary="Проверка работоспособности сервиса")
 async def health_check():
