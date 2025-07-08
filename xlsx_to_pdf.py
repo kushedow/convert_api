@@ -1,6 +1,7 @@
 import subprocess
 
-def convert_docx_file_to_pdf(source_path):
+
+def convert_xlsx_file_to_pdf(source_path):
 
     command = [
         "soffice",
@@ -31,12 +32,3 @@ def convert_docx_file_to_pdf(source_path):
         print("Error: 'soffice' command not found. Make sure LibreOffice is installed and in your PATH.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
-
-
-
-
-
-class LibreOfficeError(Exception):
-    def __init__(self, output):
-        self.output = output

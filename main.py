@@ -10,6 +10,7 @@ from docx_to_pdf import convert_docx_file_to_pdf
 from file_utils import save_base64_as_file, get_file_content_as_base64
 from jpeg_to_pdf import convert_jpeg_file_to_pdf
 from png_to_pdf import convert_png_file_to_pdf
+from xlsx_to_pdf import convert_xlsx_file_to_pdf
 
 app = FastAPI(
     title="PDF Merger API",
@@ -86,6 +87,21 @@ async def docx_to_pdf(request: FileConversionRequest):
     file_base64 = request.file_base64
     file_name: str = save_base64_as_file(file_base64, "docx")
     convert_docx_file_to_pdf(f"./temp/{file_name}.docx")
+    file_base64 = get_file_content_as_base64(f"./temp/{file_name}.pdf")
+    return {"file_base64": file_base64}
+
+@app.post("/xlsx/to/pdf", summary="Convert XLSX to PDF", response_description="Converted PDF as a Base64 string")
+async def xlsx_to_pdf(request: FileConversionRequest):
+    """
+    Converts a single XLSX file to PDF.
+    - **Prerequisite**: Requires LibreOffice (Linux/macOS) or MS Word (Windows) installed on the server.
+    - **Input**: A JSON object with a 'file_base64' key, containing a Base64-encoded DOCX string.
+    - **Output**: A JSON object with a 'file_base64' key, containing the converted PDF as a Base64 string.
+    """
+
+    file_base64 = request.file_base64
+    file_name: str = save_base64_as_file(file_base64, "xlsx")
+    convert_xlsx_file_to_pdf(f"./temp/{file_name}.xlsx")
     file_base64 = get_file_content_as_base64(f"./temp/{file_name}.pdf")
     return {"file_base64": file_base64}
 
